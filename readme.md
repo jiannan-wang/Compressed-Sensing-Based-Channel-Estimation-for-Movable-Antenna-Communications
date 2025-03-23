@@ -1,0 +1,3 @@
+This repository contains my implementation of the channel estimation algorithm proposed by the paper "[Compressed Sensing Based Channel Estimation for Movable Antenna Communications](https://ieeexplore.ieee.org/document/10236898)". Please note that I am not the original author of the paper, and this implementation is my personal attempt to reproduce the algorithm described in the work. Due to my limited expertise, there may be deviations or inaccuracies in the implementation. Reproducing fig.3 and fig.4 in this paper is still in progress.
+
+Any feedback and suggestions to improve this repo is welcome. If you find this implementation helpful for your research or projects, please kindly consider giving it a star ⭐️. Thank you!
