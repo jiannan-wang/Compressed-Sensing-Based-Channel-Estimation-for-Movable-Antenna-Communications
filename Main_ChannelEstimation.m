@@ -8,7 +8,6 @@ Lt = 3;                 % Number of multipaths at the transmitter
 Lr = 3;                 % Number of multipaths at the receiver
 lambda = 0.01;          % Carrier wavelength
 A = 4*lambda;           % Area size
-delta = lambda/5;       % distance of adjecent grids
 M = 256;                % Number of T-MA movement positions
 N = 256;                % Number of R-MA movement positions
 G = 200;                % Angular grid resolution
@@ -17,7 +16,7 @@ SNR_linear = 10^(SNR_dB/10);
 sigma2 = 1;             % Noise variance
 P = sigma2*SNR_linear;  % Transmit power
 
-% Generate true AoD/AoA and PRM 
+% Generate true AoD/AoA and PRM randomly
 [theta_t, phi_t] = RandomAngle_Generator([0,pi],[0,pi],Lt);
 [theta_r, phi_r] = RandomAngle_Generator([0,pi],[0,pi],Lr);
 true_Angle = struct('theta_t', theta_t, ...
@@ -171,12 +170,25 @@ else
     disp('No additional measurements needed.');
 end
 %% Channel Reconstruction
-H_hat = zeros(M,N);
-for i=1:M
-    for j=1:N
-        g_t_hat = exp(-1j*2*pi/lambda*(pos.tm_x(i)*esti_Angle.theta_t+pos.tm_y(i)*esti_Angle.phi_t));
-        f_r_hat = exp(-1j*2*pi/lambda*(pos.rn_y(j)*esti_Angle.theta_r+pos.rn_y(j)*esti_Angle.phi_r));
+delta = lambda/20;       % distance of adjecent grids
+D = (A/delta)^2;         % number of total grids   
+
+fixed_Tx_MA = [-A/2+delta/2,A/2-delta/2];
+% fixed_Tx_MA = [0,0];
+
+row = (-A/2+delta/2):delta:(A/2-delta/2);
+varied_Rx_MA.x = repmat(row,[sqrt(D),1]);
+col = ((A/2-delta/2):-delta:(-A/2+delta/2))';
+varied_Rx_MA.y = repmat(col,[1,sqrt(D)]);
+
+H_hat = zeros(sqrt(D),sqrt(D));
+for i=1:sqrt(D)
+    for j=1:sqrt(D)
+        g_t_hat = exp(-1j*2*pi/lambda*(fixed_Tx_MA(1)*esti_Angle.theta_t+fixed_Tx_MA(2)*esti_Angle.phi_t));
+        f_r_hat = exp(-1j*2*pi/lambda*(varied_Rx_MA.x(i,j)*esti_Angle.theta_r+varied_Rx_MA.y(i,j)*esti_Angle.phi_r));
         H_hat(i,j) = f_r_hat'*PRM_hat*g_t_hat;
     end
 end
-figure,imagesc(linspace(-A/2,A/2,M),linspace(-A/2,A/2,M),abs(H_hat));
+figure,imagesc(row/lambda,flip(col)/lambda,abs(H_hat)./max(abs(H_hat(:))));colorbar;
+xlabel('Normalized x/{/lambda}'),ylabel('Normalized y/{/lambda}');
+title('Tx-MA is fixed while Rx-MA is moving along all the grids');
