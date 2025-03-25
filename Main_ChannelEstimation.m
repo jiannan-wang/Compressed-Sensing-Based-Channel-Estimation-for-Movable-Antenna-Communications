@@ -113,14 +113,13 @@ if K > 0
     ub = A/2*ones(4*K, 1);
     x0 = [pos_init.ta_x;pos_init.ta_y;pos_init.ra_x;pos_init.ra_y];
     [pos_opt, cond_opt] = fmincon(obj_fun, x0, [], [], [], [], lb, ub, [], options);
-    disp(['minimum conditional number is ', num2str(cond_opt)]);
+    disp(['minimum conditional number obtained by fmincon is ', num2str(cond_opt)]);
 
-    % Extract optimized positions
-    ta_x_opt = pos_opt(1:K);
-    ta_y_opt = pos_opt(K+1:2*K);
-    ra_x_opt = pos_opt(2*K+1:3*K);
-    ra_y_opt = pos_opt(3*K+1:4*K);
-    
+    % % Extract optimized positions
+    % ta_x_opt = pos_opt(1:K);
+    % ta_y_opt = pos_opt(K+1:2*K);
+    % ra_x_opt = pos_opt(2*K+1:3*K);
+    % ra_y_opt = pos_opt(3*K+1:4*K);
     %% Random position selection (RPS)
     num_realizations = 100;
     RPS_list = zeros(num_realizations,1+4*K);
@@ -132,24 +131,15 @@ if K > 0
     RPS_index = find(RPS_list(:,1)==min(RPS_list(:,1)));
     disp(['conditional number obtained by RPS is ', num2str(RPS_list(RPS_index,1))]);
     pos_RPS = RPS_list(RPS_index,2:end)';
-    %% Generate additional channel measurements using TRUE channel parameters
-    y_additional = zeros(K, 1);
-    Psi_additional = zeros(K, Lt_esti*Lr_esti);
-    for k = 1:K
-        % True steering vectors
-        g_tka_true = exp(-1j*2*pi/lambda*(ta_x_opt(k)*true_Angle.theta_t+ta_y_opt(k)*true_Angle.phi_t));
-        f_rka_true = exp(-1j*2*pi/lambda*(ra_x_opt(k)*true_Angle.theta_r+ra_y_opt(k)*true_Angle.phi_r));
-        % Generate noise
-        z_ka = sqrt(sigma2/2) * (randn + 1j*randn);
-        y_additional(k) = sqrt(P)*kron(g_tka_true.',f_rka_true')*PRM(:) + z_ka;
 
-        % Estimated steering vectors
-        g_tka_esti = exp(-1j*2*pi/lambda*(ta_x_opt(k)*esti_Angle.theta_t+ta_y_opt(k)*esti_Angle.phi_t));
-        f_rka_esti = exp(-1j*2*pi/lambda*(ra_x_opt(k)*esti_Angle.theta_r+ra_y_opt(k)*esti_Angle.phi_r));
-        Psi_additional(k, :) = sqrt(P)*kron(g_tka_esti.', f_rka_esti');
-    end
+    pos_RP = (2*rand(4*K,1)-1)*A/2;  % Random Position (RP)
+    %% Additional measurements
+    % measurements
+    [~, ~, Psi_additional_true] = cond_obj_function(pos_opt, K, lambda, true_Angle, P, [Psi_yt;Psi_yr]);
+    y_additional = Psi_additional_true*PRM(:)+sqrt(sigma2/2) * (randn(K,1) + 1j*randn(K,1));
     
-    Psi = [Psi_yt; Psi_yr; Psi_additional];
+    % Estimated measurement matrix
+    [~, Psi, Psi_additional] = cond_obj_function(pos_opt, K, lambda, esti_Angle, P, [Psi_yt;Psi_yr]);
     rank([Psi_yt;Psi_yr])
     rank(Psi_additional)
     rank(Psi)
