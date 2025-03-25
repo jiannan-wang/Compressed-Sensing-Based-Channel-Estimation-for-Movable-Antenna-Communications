@@ -112,14 +112,26 @@ if K > 0
     lb = -A/2*ones(4*K, 1);
     ub = A/2*ones(4*K, 1);
     x0 = [pos_init.ta_x;pos_init.ta_y;pos_init.ra_x;pos_init.ra_y];
-    [pos_opt, ~] = fmincon(obj_fun, x0, [], [], [], [], lb, ub, [], options);
-    
+    [pos_opt, cond_opt] = fmincon(obj_fun, x0, [], [], [], [], lb, ub, [], options);
+    disp(['minimum conditional number is ', num2str(cond_opt)]);
+
     % Extract optimized positions
     ta_x_opt = pos_opt(1:K);
     ta_y_opt = pos_opt(K+1:2*K);
     ra_x_opt = pos_opt(2*K+1:3*K);
     ra_y_opt = pos_opt(3*K+1:4*K);
     
+    %% Random position selection (RPS)
+    num_realizations = 100;
+    RPS_list = zeros(num_realizations,1+4*K);
+    for i=1:num_realizations
+        MA_pos_random = (2*rand(4*K,1)-1)*A/2;
+        RPS_list(i,1) = cond_obj_function(MA_pos_random, K, lambda, true_Angle, P, [Psi_yt; Psi_yr]);
+        RPS_list(i,2:end) = MA_pos_random';
+    end
+    RPS_index = find(RPS_list(:,1)==min(RPS_list(:,1)));
+    disp(['conditional number obtained by RPS is ', num2str(RPS_list(RPS_index,1))]);
+    pos_RPS = RPS_list(RPS_index,2:end)';
     %% Generate additional channel measurements using TRUE channel parameters
     y_additional = zeros(K, 1);
     Psi_additional = zeros(K, Lt_esti*Lr_esti);
@@ -173,7 +185,7 @@ end
 delta = lambda/20;       % distance of adjecent grids
 D = (A/delta)^2;         % number of total grids   
 
-fixed_Tx_MA = [-A/2+delta/2,A/2-delta/2];
+fixed_Tx_MA = [-A/2+delta/2,A/2-delta/2];  % top left corner
 % fixed_Tx_MA = [0,0];
 
 row = (-A/2+delta/2):delta:(A/2-delta/2);
