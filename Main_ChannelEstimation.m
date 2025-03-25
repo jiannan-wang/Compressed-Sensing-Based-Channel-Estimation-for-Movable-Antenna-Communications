@@ -103,7 +103,7 @@ if K > 0
                       'ra_y', (2*rand(K,1)-1)*A/2);
     
     % Objective function handle
-    obj_fun = @(x) cond_obj_function(x, K, lambda, true_Angle, P, [Psi_yt; Psi_yr]);
+    obj_fun = @(x) cond_obj_function(x, K, lambda, esti_Angle, P, [Psi_yt; Psi_yr]);
     
     % Optimize using fmincon
     options = optimoptions('fmincon', 'Algorithm', 'interior-point', ...
@@ -125,7 +125,7 @@ if K > 0
     RPS_list = zeros(num_realizations,1+4*K);
     for i=1:num_realizations
         MA_pos_random = (2*rand(4*K,1)-1)*A/2;
-        RPS_list(i,1) = cond_obj_function(MA_pos_random, K, lambda, true_Angle, P, [Psi_yt; Psi_yr]);
+        RPS_list(i,1) = cond_obj_function(MA_pos_random, K, lambda, esti_Angle, P, [Psi_yt; Psi_yr]);
         RPS_list(i,2:end) = MA_pos_random';
     end
     RPS_index = find(RPS_list(:,1)==min(RPS_list(:,1)));
@@ -133,10 +133,12 @@ if K > 0
     pos_RPS = RPS_list(RPS_index,2:end)';
 
     pos_RP = (2*rand(4*K,1)-1)*A/2;  % Random Position (RP)
+    cond_RP = cond_obj_function(pos_RP, K, lambda, esti_Angle, P, [Psi_yt; Psi_yr]);
+    disp(['conditional number obtained by RP is ', num2str(cond_RP)]);
     %% Additional measurements
     % measurements
     [~, ~, Psi_additional_true] = cond_obj_function(pos_opt, K, lambda, true_Angle, P, [Psi_yt;Psi_yr]);
-    y_additional = Psi_additional_true*PRM(:)+sqrt(sigma2/2) * (randn(K,1) + 1j*randn(K,1));
+    y_additional = Psi_additional_true*PRM(:)+sqrt(sigma2/2)*(randn(K,1)+1j*randn(K,1));
     
     % Estimated measurement matrix
     [~, Psi, Psi_additional] = cond_obj_function(pos_opt, K, lambda, esti_Angle, P, [Psi_yt;Psi_yr]);
