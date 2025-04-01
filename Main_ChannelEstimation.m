@@ -4,7 +4,7 @@
 clear; clc; close all;
 
 %% Parameter Settings
-Lt = 3;                 % Number of multipaths at the transmitter
+Lt = 1;                 % Number of multipaths at the transmitter
 Lr = 3;                 % Number of multipaths at the receiver
 lambda = 0.01;          % Carrier wavelength
 A = 4*lambda;           % Area size
@@ -24,21 +24,23 @@ true_Angle = struct('theta_t', theta_t, ...
                     'theta_r', theta_r, ...
                     'phi_r', phi_r);
 
-% PRM = (randn(Lr, Lt) + 1j*randn(Lr, Lt))/sqrt(2);
-
-% assuming that Lr = Lt
-eta = 1;  % the ratio of the average power for diagnonal elements to that for non-diasonal elements
-diag_var = eta/(eta+1)*Lr;
-nondiag_var = 1/((eta+1)*(Lr-1)*Lr);
-PRM = zeros(Lr,Lr);
-for p=1:Lr
-    for q=1:Lr
-        if p==q
-            PRM(p,p) = sqrt(diag_var/2)*(randn+1j*randn);
-        else
-            PRM(p,q) = sqrt(nondiag_var/2)*(randn+1j*randn);
+if Lr == Lt
+    % assuming that Lr = Lt
+    eta = 1;  % the ratio of the average power for diagnonal elements to that for non-diasonal elements
+    diag_var = eta/(eta+1)*Lr;
+    nondiag_var = 1/((eta+1)*(Lr-1)*Lr);
+    PRM = zeros(Lr,Lr);
+    for p=1:Lr
+        for q=1:Lr
+            if p==q
+                PRM(p,p) = sqrt(diag_var/2)*(randn+1j*randn);
+            else
+                PRM(p,q) = sqrt(nondiag_var/2)*(randn+1j*randn);
+            end
         end
     end
+else
+    PRM = (randn(Lr, Lt) + 1j*randn(Lr, Lt))/sqrt(2);
 end
 %% Steering matrix for AoD/AoA estimation
 % pos = struct('tm_x', (2*rand(M,1)-1)*A/2, ...
